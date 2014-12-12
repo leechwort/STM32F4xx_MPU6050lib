@@ -1,8 +1,9 @@
-//MPU6050 I2C library for ARM STM32F103xx Microcontrollers - Header file has defines
+//MPU6050 I2C library for ARM STM32F4xx Microcontrollers - Header file has defines
 // to choose I2C peripheral, speed & pins. 
 // 23/05/2012 by Harinadha Reddy Chintalapalli <harinath.ec@gmail.com>
 // Changelog:
 //     2012-05-23 - initial release.
+//     2014-12-12 - library ported to STM32F4xx controller by Artem Synytsyn
 /* ============================================================================================
  MPU6050 device I2C library code for ARM STM32F103xx is placed under the MIT license
  Copyright (c) 2012 Harinadha Reddy Chintalapalli
@@ -36,19 +37,24 @@ extern "C" {
 #endif
 
 /* Includes */
-#include "stm32f10x.h"
+#include "stm32f4xx.h"
+#include "stm32f4xx_gpio.h"
+#include "stm32f4xx_rcc.h"
+#include "stm32f4xx_i2c.h"
 
 /**
  * @addtogroup  MPU6050_I2C_Define
  * @{
  */
 
-#define MPU6050_I2C                  I2C2
-#define MPU6050_I2C_RCC_Periph       RCC_APB1Periph_I2C2
+#define MPU6050_I2C                  I2C1
+#define MPU6050_I2C_RCC_Periph       RCC_APB1Periph_I2C1
 #define MPU6050_I2C_Port             GPIOB
-#define MPU6050_I2C_SCL_Pin          GPIO_Pin_10
-#define MPU6050_I2C_SDA_Pin          GPIO_Pin_11
-#define MPU6050_I2C_RCC_Port         RCC_APB2Periph_GPIOB
+#define MPU6050_I2C_SCL_Pin          GPIO_Pin_6
+#define MPU6050_I2C_SDA_Pin          GPIO_Pin_7
+#define MPU6050_I2C_SCL_PinSource	   GPIO_PinSource6
+#define MPU6050_I2C_SDA_PinSource	   GPIO_PinSource7
+#define MPU6050_I2C_RCC_Port         RCC_AHB1Periph_GPIOB
 #define MPU6050_I2C_Speed            100000 // 100kHz standard mode
 
 /**
