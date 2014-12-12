@@ -4,6 +4,7 @@
 // Changelog:
 //     2012-05-23 - initial release. Thanks to Jeff Rowberg <jeff@rowberg.net> for his AVR/Arduino
 //                  based MPU6050 development which inspired me & taken as reference to develop this.
+//     2014-12-12 - Library ported to stm32f4 microcontroller by Artem Synytsyn
 /* ============================================================================================
  MPU6050 device I2C library code for ARM STM32F103xx is placed under the MIT license
  Copyright (c) 2012 Harinadha Reddy Chintalapalli
@@ -30,7 +31,7 @@
 
 /* Includes */
 #include "MPU6050.h"
-#include "stm32f10x_i2c.h"
+#include "stm32f4xx_i2c.h"
 
 /** @defgroup MPU6050_Library
  * @{
@@ -57,7 +58,7 @@ void MPU6050_Initialize()
  */
 bool MPU6050_TestConnection()
 {
-    return MPU6050_GetDeviceID() == 0x34 ? TRUE : FALSE; //0b110100; 8-bit representation in hex = 0x34
+    return MPU6050_GetDeviceID() == 0x34 ? true : false; //0b110100; 8-bit representation in hex = 0x34
 }
 // WHO_AM_I register
 
@@ -197,7 +198,7 @@ bool MPU6050_GetSleepModeStatus()
 {
     uint8_t tmp;
     MPU6050_ReadBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, &tmp);
-    return tmp == 0x00 ? FALSE : TRUE;
+    return tmp == 0x00 ? false : true;
 }
 
 /** Set sleep mode status.
@@ -313,31 +314,37 @@ void MPU6050_ReadBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t
  */
 void MPU6050_I2C_Init()
 {
-    I2C_InitTypeDef I2C_InitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
 
-    /* Enable I2C and GPIO clocks */
-    RCC_APB1PeriphClockCmd(MPU6050_I2C_RCC_Periph, ENABLE);
-    RCC_APB2PeriphClockCmd(MPU6050_I2C_RCC_Port, ENABLE);
+	I2C_InitTypeDef I2C_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
 
-    /* Configure I2C pins: SCL and SDA */
-    GPIO_InitStructure.GPIO_Pin = MPU6050_I2C_SCL_Pin | MPU6050_I2C_SDA_Pin;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-    GPIO_Init(MPU6050_I2C_Port, &GPIO_InitStructure);
+	/* Enable I2C and GPIO clocks */
+	RCC_AHB1PeriphClockCmd(MPU6050_I2C_RCC_Port, ENABLE);
+	RCC_APB1PeriphClockCmd(MPU6050_I2C_RCC_Periph, ENABLE);
 
-    /* I2C configuration */
-    I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
-    I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
-    I2C_InitStructure.I2C_OwnAddress1 = MPU6050_DEFAULT_ADDRESS; // MPU6050 7-bit adress = 0x68, 8-bit adress = 0xD0;
-    I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
-    I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-    I2C_InitStructure.I2C_ClockSpeed = MPU6050_I2C_Speed;
+	/* Configure I2C pins: SCL and SDA */
+	GPIO_InitStructure.GPIO_Pin = MPU6050_I2C_SCL_Pin | MPU6050_I2C_SDA_Pin;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
 
-    /* Apply I2C configuration after enabling it */
-    I2C_Init(MPU6050_I2C, &I2C_InitStructure);
-    /* I2C Peripheral Enable */
-    I2C_Cmd(MPU6050_I2C, ENABLE);
+	GPIO_PinAFConfig(GPIOB,MPU6050_I2C_SCL_PinSource,GPIO_AF_I2C1);
+	GPIO_PinAFConfig(GPIOB, MPU6050_I2C_SDA_PinSource, GPIO_AF_I2C1);
+	GPIO_Init(GPIOB,&GPIO_InitStructure);
+
+	/* I2C configuration */
+	I2C_InitStructure.I2C_ClockSpeed = MPU6050_I2C_Speed;
+	I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
+	I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
+	I2C_InitStructure.I2C_OwnAddress1 = MPU6050_DEFAULT_ADDRESS; // MPU6050 7-bit address = 0x68, 8-bit address = 0xD0;
+	I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+
+	/* Apply I2C configuration after enabling it */
+	I2C_Init(MPU6050_I2C, &I2C_InitStructure);
+	/* I2C Peripheral Enable */
+	I2C_Cmd(MPU6050_I2C, ENABLE);
 }
 
 /**
@@ -434,7 +441,7 @@ void MPU6050_I2C_BufferRead(u8 slaveAddr, u8* pBuffer, u8 readAddr, u16 NumByteT
     {
         if (NumByteToRead == 1)
         {
-            /* Disable Acknowledgement */
+            /* Disable Acknowledgment */
             I2C_AcknowledgeConfig(MPU6050_I2C, DISABLE);
 
             /* Send STOP Condition */
@@ -455,7 +462,7 @@ void MPU6050_I2C_BufferRead(u8 slaveAddr, u8* pBuffer, u8 readAddr, u16 NumByteT
         }
     }
 
-    /* Enable Acknowledgement to be ready for another reception */
+    /* Enable Acknowledgment to be ready for another reception */
     I2C_AcknowledgeConfig(MPU6050_I2C, ENABLE);
     // EXT_CRT_SECTION();
 }
