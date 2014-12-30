@@ -7,6 +7,8 @@ int16_t rx,ry,rz; // Gyroscope data
 
 int main(void)
 {
+	MPU_I2C_ClockToggling();// I2C lockup prevernt
+	
 	MPU6050_I2C_Init();
 	MPU6050_Initialize();
 	//bool result = MPU6050_TestConnection(); // Uncomment if you want to test connection
