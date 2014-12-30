@@ -52,6 +52,47 @@ void MPU6050_Initialize()
     MPU6050_SetSleepModeStatus(DISABLE);
 }
 
+/** Unlocking I2C bus, when I2C lockup occured.
+ * This function toggles clock pin until SDA releases.
+ */
+void MPU_I2C_ClockToggling()
+{
+    const int delay = 10000;
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+
+    /* Configure SCL GPIO as output */
+    RCC_AHB1PeriphClockCmd(MPU6050_I2C_RCC_Port, ENABLE);
+
+    GPIO_InitStructure.GPIO_Pin = MPU6050_I2C_SCL_Pin;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+
+	GPIO_Init(MPU6050_I2C_Port, &GPIO_InitStructure);
+	/* Configure SDA GPIO as input */
+    GPIO_InitStructure.GPIO_Pin = MPU6050_I2C_SDA_Pin;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+
+	GPIO_Init(MPU6050_I2C_Port, &GPIO_InitStructure);
+
+	uint8_t input_pin_state = 100;
+	input_pin_state = GPIO_ReadInputDataBit(MPU6050_I2C_Port, MPU6050_I2C_SDA_Pin);
+	while (input_pin_state == 0)
+    {
+        input_pin_state = GPIO_ReadInputDataBit(MPU6050_I2C_Port, MPU6050_I2C_SDA_Pin);
+        GPIO_SetBits(MPU6050_I2C_Port, MPU6050_I2C_SCL_Pin);
+        for (int j = 0; j < delay; j++);
+        GPIO_ResetBits(MPU6050_I2C_Port, MPU6050_I2C_SCL_Pin);
+        for (int j = 0; j < delay; j++);
+    }
+	GPIO_DeInit(MPU6050_I2C_Port);
+	for (int j = 0; j < delay; j++);
+}
 /** Verify the I2C connection.
  * Make sure the device is connected and responds as expected.
  * @return True if connection is valid, FALSE otherwise
