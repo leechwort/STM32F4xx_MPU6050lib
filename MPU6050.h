@@ -393,6 +393,8 @@ extern "C" {
 
 void MPU6050_Initialize();
 bool MPU6050_TestConnection();
+void MPU_I2C_ClockToggling();
+
 
 // GYRO_CONFIG register
 uint8_t MPU6050_GetFullScaleGyroRange();
